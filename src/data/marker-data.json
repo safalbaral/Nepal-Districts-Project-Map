@@ -1,0 +1,14 @@
+[
+  {
+    "district": "Morang",
+    "totalProjects": 100
+  },
+  {
+    "district": "Kathmandu",
+    "totalProjects": 50
+  },
+  {
+    "district": "Lalitpur",
+    "totalProjects": 30
+  }
+]

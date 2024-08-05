@@ -1,13 +1,14 @@
 import "./output.css";
 import "leaflet/dist/leaflet.css";
-import Map from "./components/Map";
+import Dashboard from "./components/Dashboard";
 import Header from "./components/Header";
+import BigStats from "./components/BigStats";
 
 const App = () => {
   return (
     <div>
       <Header />
-      <Map />
+      <Dashboard />
     </div>
   );
 };

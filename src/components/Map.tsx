@@ -55,6 +55,7 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
   const [showMunicipalities, setShowMunicipalities] = useState(false);
   const [markerData, setMarkerData] = useState(null);
   const [selectedMarker, setSelectedMarker] = useState(null);
+  const [plottedDistricts, setPlottedDistricts] = useState([]);
 
   useEffect(() => {
     loadProvinces(setProvincesData, setMapBounds, setError);
@@ -108,6 +109,36 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
 
     // Create a plotted district state
     // For each district, check if it's in plotted district, if not then only render
+
+    return markerData.map((marker, index) => {
+      const district = marker.district;
+      const center = getDistrictCenter(district, districtsData);
+      const isSelected =
+        selectedMarker && selectedMarker.district === marker.district;
+
+      return (
+        <Marker
+          key={`${index}`}
+          position={[center.lat, center.lng]}
+          icon={createCustomIcon(isSelected)}
+          eventHandlers={{
+            click: () => handleMarkerClick(marker),
+            mouseover: (e) => {
+              e.target.openPopup();
+            },
+            mouseout: (e) => {
+              e.target.closePopup();
+            },
+          }}
+        >
+          <Popup>
+            <h3>{marker.district}</h3>
+            <p>Total Projects: {marker.totalProjects}</p>
+            <p className="text-gray-500">Click to see projects on sidebar</p>
+          </Popup>
+        </Marker>
+      );
+    });
 
     return markerData.flatMap((marker, index) => {
       const districts = Array.isArray(marker.district)
