@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { MapContainer, GeoJSON, useMap } from "react-leaflet";
+import { MapContainer, GeoJSON, useMap, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useEffect, useState } from "react";
+
+import { getDistrictCenter } from "../utils/mapUtils";
 
 function SetMapView({ bounds }) {
   const map = useMap();
@@ -37,43 +39,16 @@ function ZoomHandler({ setShowDistricts, setShowMunicipalities }) {
   return null;
 }
 
-const DataDisplay = ({ selectedRegion }) => {
-  return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">Region Data</h2>
-      {selectedRegion ? (
-        <div>
-          <p>
-            <strong>Name:</strong> {selectedRegion.name}
-          </p>
-          <p>
-            <strong>Population:</strong>{" "}
-            {selectedRegion.population.toLocaleString()}
-          </p>
-          <p>
-            <strong>Area:</strong> {selectedRegion.area.toLocaleString()} km²
-          </p>
-          <p>
-            <strong>Density:</strong>{" "}
-            {(selectedRegion.population / selectedRegion.area).toFixed(2)}{" "}
-            people/km²
-          </p>
-        </div>
-      ) : (
-        <p>Select a region on the map to view data.</p>
-      )}
-    </div>
-  );
-};
-
 const Map = ({ onRegionSelect }) => {
   const [provincesData, setProvincesData] = useState(null);
   const [mapBounds, setMapBounds] = useState(null);
   const [error, setError] = useState(null);
   const [districtsData, setDistrictsData] = useState(null);
   const [municipalitiesData, setMunicipalitiesData] = useState(null);
-  const [showDistricts, setShowDistricts] = useState(false);
+  //const [showDistricts, setShowDistricts] = useState(false);
+  const [showDistricts, setShowDistricts] = useState(true);
   const [showMunicipalities, setShowMunicipalities] = useState(false);
+  const [markerData, setMarkerData] = useState(null);
 
   const loadGeoJSON = async (url, setData) => {
     try {
@@ -104,6 +79,22 @@ const Map = ({ onRegionSelect }) => {
       }
     };
     loadProvinces();
+
+    const loadMarkerData = async () => {
+      try {
+        const response = await fetch("/src/data/marker-data.json");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("MARK DATA", data);
+        setMarkerData(data);
+      } catch (e) {
+        console.error("Error loading marker data:", e);
+        setError(`Failed to load marker data: ${e.message}`);
+      }
+    };
+    loadMarkerData();
   }, []);
 
   useEffect(() => {
@@ -159,8 +150,6 @@ const Map = ({ onRegionSelect }) => {
         const region = e.target.feature.properties;
         onRegionSelect({
           name: region.PR_NAME || region.DISTRICT || region.GaPa_NaPa,
-          population: Math.floor(Math.random() * 1000000) + 100000, // Replace with actual data
-          area: Math.floor(Math.random() * 10000) + 1000, // Replace with actual data
         });
       },
     });
@@ -179,17 +168,17 @@ const Map = ({ onRegionSelect }) => {
       style={{ background: "white" }}
     >
       {mapBounds && <SetMapView bounds={mapBounds} />}
-      <ZoomHandler
+      {/*      <ZoomHandler
         setShowDistricts={setShowDistricts}
         setShowMunicipalities={setShowMunicipalities}
-      />
-      {provincesData && (
+      />*/}
+      {/*      {provincesData && (
         <GeoJSON
           data={provincesData}
           style={style}
           onEachFeature={onEachFeature}
         />
-      )}
+      )}*/}
       {showDistricts && districtsData && (
         <GeoJSON
           data={districtsData}
@@ -197,42 +186,30 @@ const Map = ({ onRegionSelect }) => {
           onEachFeature={onEachFeature}
         />
       )}
-      {showMunicipalities && municipalitiesData && (
+      {markerData &&
+        districtsData &&
+        markerData.map((marker, index) => {
+          const center = getDistrictCenter(marker.district, districtsData);
+          return center ? (
+            <Marker key={index} position={[center.lat, center.lng]}>
+              <Popup>
+                <h3>{marker.name}</h3>
+                <p>{marker.description}</p>
+                <p>District: {marker.district}</p>
+              </Popup>
+            </Marker>
+          ) : null;
+        })}
+
+      {/*      {showMunicipalities && municipalitiesData && (
         <GeoJSON
           data={municipalitiesData}
           style={style}
           onEachFeature={onEachFeature}
         />
-      )}
+      )}*/}
     </MapContainer>
   );
 };
 
-const Dashboard = () => {
-  const [selectedRegion, setSelectedRegion] = useState(null);
-
-  const handleRegionSelect = (region) => {
-    setSelectedRegion(region);
-  };
-
-  return (
-    <div
-      className="flex h-screen overflow-hidden pb-12"
-      style={{ backgroundColor: "#0275c8" }}
-    >
-      <div className="flex-1 p-4" style={{ backgroundColor: "#0275c8" }}>
-        <div className="text-2xl font-bold text-white text-center ">
-          Data Visualization Title
-        </div>
-        <div className="h-full rounded-lg overflow-hidden shadow-lg">
-          <Map onRegionSelect={handleRegionSelect} />
-        </div>
-      </div>
-      <div className="w-1/3 p-4">
-        <DataDisplay selectedRegion={selectedRegion} />
-      </div>
-    </div>
-  );
-};
-
-export default Dashboard;
+export default Map;
