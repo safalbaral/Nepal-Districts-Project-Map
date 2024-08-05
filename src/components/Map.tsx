@@ -4,6 +4,11 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 
 import { getDistrictCenter } from "../utils/mapUtils";
+import {
+  loadGeoJSON,
+  loadMarkerData,
+  loadProvinces,
+} from "../utils/loaderUtils";
 
 function SetMapView({ bounds }) {
   const map = useMap();
@@ -39,7 +44,7 @@ function ZoomHandler({ setShowDistricts, setShowMunicipalities }) {
   return null;
 }
 
-const Map = ({ onRegionSelect }) => {
+const Map = ({ onRegionSelect, onMarkerSelect }) => {
   const [provincesData, setProvincesData] = useState(null);
   const [mapBounds, setMapBounds] = useState(null);
   const [error, setError] = useState(null);
@@ -49,68 +54,98 @@ const Map = ({ onRegionSelect }) => {
   const [showDistricts, setShowDistricts] = useState(true);
   const [showMunicipalities, setShowMunicipalities] = useState(false);
   const [markerData, setMarkerData] = useState(null);
-
-  const loadGeoJSON = async (url, setData) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setData(data);
-      return data;
-    } catch (e) {
-      console.error(`Error loading GeoJSON from ${url}:`, e);
-      setError(`Failed to load GeoJSON: ${e.message}`);
-    }
-  };
+  const [selectedMarker, setSelectedMarker] = useState(null);
 
   useEffect(() => {
-    const loadProvinces = async () => {
-      const data = await loadGeoJSON(
-        "/src/assets/nepalgeojson/country/province.geojson",
-        setProvincesData
-      );
-      if (data && data.features && data.features.length > 0) {
-        const bounds = L.geoJSON(data).getBounds();
-        setMapBounds(bounds);
-      } else {
-        setError("GeoJSON data is empty or invalid");
-      }
-    };
-    loadProvinces();
-
-    const loadMarkerData = async () => {
-      try {
-        const response = await fetch("/src/data/marker-data.json");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("MARK DATA", data);
-        setMarkerData(data);
-      } catch (e) {
-        console.error("Error loading marker data:", e);
-        setError(`Failed to load marker data: ${e.message}`);
-      }
-    };
-    loadMarkerData();
+    loadProvinces(setProvincesData, setMapBounds, setError);
+    loadMarkerData(setMarkerData, setError);
   }, []);
 
   useEffect(() => {
     if (showDistricts && !districtsData) {
       loadGeoJSON(
         "/src/assets/nepalgeojson/country/district.geojson",
-        setDistrictsData
+        setDistrictsData,
+        setError
       );
     }
     if (showMunicipalities && !municipalitiesData) {
       loadGeoJSON(
         "/src/assets/nepalgeojson/country/municipality.geojson",
-        setMunicipalitiesData
+        setMunicipalitiesData,
+        setError
       );
     }
   }, [showDistricts, showMunicipalities, districtsData, municipalitiesData]);
+
+  const createCustomIcon = (isSelected) => {
+    return L.divIcon({
+      className: "custom-icon",
+      html: `<div style="
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background-color: ${isSelected ? "#ff0000" : "#0275c8"};
+        border: 2px solid white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+      ">M</div>`, //TODO: Implement number of projects in district?
+    });
+  };
+
+  const handleMarkerClick = (marker) => {
+    setSelectedMarker(marker);
+    onMarkerSelect(marker);
+    console.log("Marker clicked:", marker);
+  };
+
+  // TODO: Change marker function so that markers aren't linked, conditionally display markers only if it hasn't already been plotted
+  const renderMarkers = () => {
+    if (!markerData || !districtsData) return null;
+
+    // Create a plotted district state
+    // For each district, check if it's in plotted district, if not then only render
+
+    return markerData.flatMap((marker, index) => {
+      const districts = Array.isArray(marker.district)
+        ? marker.district
+        : [marker.district];
+
+      return districts
+        .map((district, districtIndex) => {
+          const center = getDistrictCenter(district, districtsData);
+          const isSelected =
+            selectedMarker && selectedMarker.name === marker.name;
+
+          return center ? (
+            <Marker
+              key={`${index}-${districtIndex}`}
+              position={[center.lat, center.lng]}
+              icon={createCustomIcon(isSelected)}
+              eventHandlers={{
+                click: () => handleMarkerClick(marker),
+                mouseover: (e) => {
+                  e.target.openPopup();
+                },
+                mouseout: (e) => {
+                  e.target.closePopup();
+                },
+              }}
+            >
+              <Popup>
+                <h3>{marker.name}</h3>
+                <p>{marker.description}</p>
+                <p>District: {district}</p>
+              </Popup>
+            </Marker>
+          ) : null;
+        })
+        .filter(Boolean);
+    });
+  };
 
   const style = () => {
     return {
@@ -186,20 +221,7 @@ const Map = ({ onRegionSelect }) => {
           onEachFeature={onEachFeature}
         />
       )}
-      {markerData &&
-        districtsData &&
-        markerData.map((marker, index) => {
-          const center = getDistrictCenter(marker.district, districtsData);
-          return center ? (
-            <Marker key={index} position={[center.lat, center.lng]}>
-              <Popup>
-                <h3>{marker.name}</h3>
-                <p>{marker.description}</p>
-                <p>District: {marker.district}</p>
-              </Popup>
-            </Marker>
-          ) : null;
-        })}
+      {renderMarkers()}
 
       {/*      {showMunicipalities && municipalitiesData && (
         <GeoJSON
