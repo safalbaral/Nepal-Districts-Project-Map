@@ -1,6 +1,6 @@
 export const loadProjectsData = async (setProjectsData) => {
   try {
-    const response = await fetch("/src/data/projects-data.json");
+    const response = await fetch("/data/projects-data.json");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -14,7 +14,7 @@ export const loadProjectsData = async (setProjectsData) => {
 
 export const loadMarkerData = async (setMarkerData) => {
   try {
-    const response = await fetch("/src/data/marker-data.json");
+    const response = await fetch("/data/marker-data.json");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -47,7 +47,7 @@ export const loadProvinces = async (
   setError
 ) => {
   const data = await loadGeoJSON(
-    "/src/assets/nepalgeojson/country/province.geojson",
+    "/assets/nepalgeojson/country/province.geojson",
     setProvincesData,
     setError
   );
