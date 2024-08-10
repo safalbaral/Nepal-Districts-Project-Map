@@ -47,7 +47,7 @@ export const loadProvinces = async (
   setError
 ) => {
   const data = await loadGeoJSON(
-    "/src/assets/nepalgeojson/country/province.geojson",
+    "/nepalgeojson/country/province.geojson",
     setProvincesData,
     setError
   );
