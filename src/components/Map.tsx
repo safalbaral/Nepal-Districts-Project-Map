@@ -40,7 +40,7 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
   useEffect(() => {
     if (showDistricts && !districtsData) {
       loadGeoJSON(
-        "/assets/nepalgeojson/country/district.geojson",
+        "/nepalgeojson/country/district.geojson",
         setDistrictsData,
         setError
       );

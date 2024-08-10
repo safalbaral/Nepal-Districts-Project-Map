@@ -1,5 +1,5 @@
 import "../output.css";
-import logo from "../assets/logo.svg";
+import logo from "../assets/logo.svg"; //TODO: Change to public folder when deploying in prod
 
 const Header = () => {
   return (
