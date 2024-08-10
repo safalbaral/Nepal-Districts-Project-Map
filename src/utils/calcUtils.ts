@@ -2,7 +2,7 @@ import { loadProjectsData } from "./loaderUtils";
 
 export const calculateProjectsInDistrict = async (district) => {
   try {
-    const response = await fetch("/src/data/projects-data.json");
+    const response = await fetch("/data/projects-data.json");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
