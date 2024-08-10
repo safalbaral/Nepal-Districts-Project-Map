@@ -1,0 +1,66 @@
+[
+  {
+    "district": "Morang",
+    "totalProjects": 101
+  },
+  {
+    "district": "Bara",
+    "totalProjects": 1
+  },
+  {
+    "district": "Bardiya",
+    "totalProjects": 1
+  },
+  {
+    "district": "Kathmandu",
+    "totalProjects": 51
+  },
+  {
+    "district": "Lalitpur",
+    "totalProjects": 31
+  },
+  {
+    "district": "Jhapa",
+    "totalProjects": 1
+  },
+  {
+    "district": "Ilam",
+    "totalProjects": 1
+  },
+  {
+    "district": "Kaski",
+    "totalProjects": 1
+  },
+  {
+    "district": "Chitwan",
+    "totalProjects": 1
+  },
+  {
+    "district": "Baglung",
+    "totalProjects": 1
+  },
+  {
+    "district": "Myagdi",
+    "totalProjects": 1
+  },
+  {
+    "district": "Dolakha",
+    "totalProjects": 1
+  },
+  {
+    "district": "Sindhupalchok",
+    "totalProjects": 1
+  },
+  {
+    "district": "Panchthar",
+    "totalProjects": 1
+  },
+  {
+    "district": "Makwanpur",
+    "totalProjects": 1
+  },
+  {
+    "district": "Ramechhap",
+    "totalProjects": 1
+  }
+]
