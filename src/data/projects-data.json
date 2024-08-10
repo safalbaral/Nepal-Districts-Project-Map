@@ -19,5 +19,54 @@
     "district": ["Morang"],
     "ongoing": true,
     "url": "https://example.com"
+  },
+  {
+    "name": "Project 4",
+    "description": "Description for Project 4",
+    "district": ["Jhapa", "Ilam"],
+    "ongoing": false,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 5",
+    "description": "Description for Project 5",
+    "district": ["Kaski"],
+    "ongoing": true,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 6",
+    "description": "Description for Project 6",
+    "district": ["Chitwan"],
+    "ongoing": false,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 7",
+    "description": "Description for Project 7",
+    "district": ["Baglung", "Myagdi"],
+    "ongoing": true,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 8",
+    "description": "Description for Project 8",
+    "district": ["Dolakha", "Sindhupalchok"],
+    "ongoing": true,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 9",
+    "description": "Description for Project 9",
+    "district": ["Panchthar"],
+    "ongoing": false,
+    "url": "https://example.com"
+  },
+  {
+    "name": "Project 10",
+    "description": "Description for Project 10",
+    "district": ["Makwanpur", "Ramechhap"],
+    "ongoing": true,
+    "url": "https://example.com"
   }
 ]
