@@ -16,7 +16,7 @@ const DataDisplay = ({ selectedRegion, selectedMarker, projectsData }) => {
     <>
       {projectsData ? (
         selectedMarker ? (
-          <div className="w-full">
+          <div className="w-full max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
             {dashboardProjects.map((project, index) => {
               return (
                 <div className="bg-white flex w-full p-4 rounded-xl flex-row mb-4">
@@ -56,8 +56,8 @@ const DataDisplay = ({ selectedRegion, selectedMarker, projectsData }) => {
             })}
           </div>
         ) : (
-          <p className="text-center text-pretty text-xl">
-            Click on a marker on the map to view list of projects
+          <p className="text-center text-pretty text-2xl">
+            Click a marker on the map to view associated projects
           </p>
         )
       ) : (
@@ -100,11 +100,11 @@ const Dashboard = () => {
 
   return (
     <div
-      className="flex h-screen overflow-hidden pb-12"
+      className="flex h-screen overflow-scroll pb-12 max-sm:flex-col-reverse"
       style={{ backgroundColor: "#0275c8" }}
     >
       <div className="flex-1 p-4" style={{ backgroundColor: "#0275c8" }}>
-        <div className="h-full rounded-lg overflow-hidden shadow-lg">
+        <div className="h-full rounded-lg overflow-hidden shadow-lg max-sm:min-h-96">
           <Map
             onRegionSelect={handleRegionSelect}
             onMarkerSelect={setSelectedMarker}
@@ -112,7 +112,7 @@ const Dashboard = () => {
         </div>
       </div>
       <div
-        className="flex flex-col w-1/3 rounded-2xl mr-4 mt-4 h-fit"
+        className="flex flex-col w-full sm:w-1/3 rounded-2xl mr-4 mt-4 h-fit"
         style={{ backgroundColor: "#e6f3fe" }}
       >
         <BigStats

@@ -1,7 +1,7 @@
 import { MapContainer, GeoJSON, useMap, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { getDistrictCenter } from "../utils/mapUtils";
 import {
@@ -9,6 +9,7 @@ import {
   loadMarkerData,
   loadProvinces,
 } from "../utils/loaderUtils";
+import { calculateProjectsInDistrict } from "../utils/calcUtils";
 
 function SetMapView({ bounds }) {
   const map = useMap();
@@ -20,42 +21,16 @@ function SetMapView({ bounds }) {
   return null;
 }
 
-function ZoomHandler({ setShowDistricts, setShowMunicipalities }) {
-  const map = useMap();
-  useEffect(() => {
-    const handleZoomEnd = () => {
-      const currentZoom = map.getZoom();
-      if (currentZoom >= 9.5) {
-        setShowDistricts(true);
-        setShowMunicipalities(false);
-      } else if (currentZoom >= 9) {
-        setShowMunicipalities(true);
-        setShowDistricts(false);
-      } else {
-        setShowDistricts(false);
-        setShowMunicipalities(false);
-      }
-    };
-    map.on("zoomend", handleZoomEnd);
-    return () => {
-      map.off("zoomend", handleZoomEnd);
-    };
-  }, [map, setShowDistricts, setShowMunicipalities]);
-  return null;
-}
-
 const Map = ({ onRegionSelect, onMarkerSelect }) => {
   const [provincesData, setProvincesData] = useState(null);
   const [mapBounds, setMapBounds] = useState(null);
   const [error, setError] = useState(null);
   const [districtsData, setDistrictsData] = useState(null);
-  const [municipalitiesData, setMunicipalitiesData] = useState(null);
   //const [showDistricts, setShowDistricts] = useState(false);
   const [showDistricts, setShowDistricts] = useState(true);
-  const [showMunicipalities, setShowMunicipalities] = useState(false);
   const [markerData, setMarkerData] = useState(null);
   const [selectedMarker, setSelectedMarker] = useState(null);
-  const [plottedDistricts, setPlottedDistricts] = useState([]);
+  const [projectCounts, setProjectCounts] = useState({});
 
   useEffect(() => {
     loadProvinces(setProvincesData, setMapBounds, setError);
@@ -70,32 +45,23 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
         setError
       );
     }
-    if (showMunicipalities && !municipalitiesData) {
-      loadGeoJSON(
-        "/src/assets/nepalgeojson/country/municipality.geojson",
-        setMunicipalitiesData,
-        setError
+  }, [showDistricts, districtsData]);
+
+  const fetchAllProjectCounts = useCallback(async () => {
+    if (!markerData) return;
+
+    const counts = {};
+    for (const marker of markerData) {
+      counts[marker.district] = await calculateProjectsInDistrict(
+        marker.district
       );
     }
-  }, [showDistricts, showMunicipalities, districtsData, municipalitiesData]);
+    setProjectCounts(counts);
+  }, [markerData]);
 
-  const createCustomIcon = (isSelected) => {
-    return L.divIcon({
-      className: "custom-icon",
-      html: `<div style="
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        background-color: ${isSelected ? "#ff0000" : "#0275c8"};
-        border: 2px solid white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-weight: bold;
-      ">M</div>`, //TODO: Implement number of projects in district?
-    });
-  };
+  useEffect(() => {
+    fetchAllProjectCounts();
+  }, [fetchAllProjectCounts]);
 
   const handleMarkerClick = (marker) => {
     setSelectedMarker(marker);
@@ -104,23 +70,40 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
   };
 
   // TODO: Change marker function so that markers aren't linked, conditionally display markers only if it hasn't already been plotted
-  const renderMarkers = () => {
-    if (!markerData || !districtsData) return null;
+  const renderMarkers = useCallback(() => {
+    const createCustomIcon = (isSelected, projectCount) => {
+      return L.divIcon({
+        className: "custom-icon",
+        html: `<div style="
+          width: 25px;
+          height: 25px;
+          border-radius: 50%;
+          background-color: ${isSelected ? "#ff0000" : "#0275c8"};
+          border: 2px solid white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-weight: bold;
+          font-size: 12px;
+        ">${projectCount}</div>`,
+      });
+    };
 
-    // Create a plotted district state
-    // For each district, check if it's in plotted district, if not then only render
+    if (!markerData || !districtsData || !projectCounts) return null;
 
     return markerData.map((marker, index) => {
       const district = marker.district;
       const center = getDistrictCenter(district, districtsData);
       const isSelected =
         selectedMarker && selectedMarker.district === marker.district;
+      const projectCount = projectCounts[district] || 0;
 
       return (
         <Marker
           key={`${index}`}
           position={[center.lat, center.lng]}
-          icon={createCustomIcon(isSelected)}
+          icon={createCustomIcon(isSelected, projectCount)}
           eventHandlers={{
             click: () => handleMarkerClick(marker),
             mouseover: (e) => {
@@ -133,50 +116,19 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
         >
           <Popup>
             <h3>{marker.district}</h3>
-            <p>Total Projects: {marker.totalProjects}</p>
+            <p>Total Projects: {projectCount}</p>
             <p className="text-gray-500">Click to see projects on sidebar</p>
           </Popup>
         </Marker>
       );
     });
-
-    return markerData.flatMap((marker, index) => {
-      const districts = Array.isArray(marker.district)
-        ? marker.district
-        : [marker.district];
-
-      return districts
-        .map((district, districtIndex) => {
-          const center = getDistrictCenter(district, districtsData);
-          const isSelected =
-            selectedMarker && selectedMarker.name === marker.name;
-
-          return center ? (
-            <Marker
-              key={`${index}-${districtIndex}`}
-              position={[center.lat, center.lng]}
-              icon={createCustomIcon(isSelected)}
-              eventHandlers={{
-                click: () => handleMarkerClick(marker),
-                mouseover: (e) => {
-                  e.target.openPopup();
-                },
-                mouseout: (e) => {
-                  e.target.closePopup();
-                },
-              }}
-            >
-              <Popup>
-                <h3>{marker.name}</h3>
-                <p>{marker.description}</p>
-                <p>District: {district}</p>
-              </Popup>
-            </Marker>
-          ) : null;
-        })
-        .filter(Boolean);
-    });
-  };
+  }, [
+    markerData,
+    districtsData,
+    projectCounts,
+    selectedMarker,
+    handleMarkerClick,
+  ]);
 
   const style = () => {
     return {
@@ -234,17 +186,6 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
       style={{ background: "white" }}
     >
       {mapBounds && <SetMapView bounds={mapBounds} />}
-      {/*      <ZoomHandler
-        setShowDistricts={setShowDistricts}
-        setShowMunicipalities={setShowMunicipalities}
-      />*/}
-      {/*      {provincesData && (
-        <GeoJSON
-          data={provincesData}
-          style={style}
-          onEachFeature={onEachFeature}
-        />
-      )}*/}
       {showDistricts && districtsData && (
         <GeoJSON
           data={districtsData}
@@ -253,14 +194,6 @@ const Map = ({ onRegionSelect, onMarkerSelect }) => {
         />
       )}
       {renderMarkers()}
-
-      {/*      {showMunicipalities && municipalitiesData && (
-        <GeoJSON
-          data={municipalitiesData}
-          style={style}
-          onEachFeature={onEachFeature}
-        />
-      )}*/}
     </MapContainer>
   );
 };
